@@ -20,27 +20,38 @@ var loadPage = function (page, gearId, data, activityType) {
     })
 };
 
-var addYearTotals = function (activity, totalsByYear) {
+var addYearTotals = function (activity, totalsByYear, countByYear, timeByYear) {
     var year = activity.start_time.substring(0, 4);
     if (totalsByYear[year] === undefined) {
         totalsByYear[year] = 0;
+        countByYear[year] = 0;
+        timeByYear[year] = 0;
     }
     totalsByYear[year] += parseFloat(activity.distance);
+    countByYear[year] += 1;
+    timeByYear[year] += activity.elapsed_time_raw;
 }
 
-var calculate = function (gearId, activityType) {
+var calculate = function (gearId, gearName, activityType) {
     var data = loadData(1, gearId, activityType);
     var totalsByYear = {};
+    var countByYear = {};
+    var timeByYear = {};
     var totalDistance = 0;
+    var totalCount = 0;
+    var totalTime = 0;
     data.forEach(function (activity) {
-        addYearTotals(activity, totalsByYear);
+        addYearTotals(activity, totalsByYear, countByYear, timeByYear);
     });
     for (var year in totalsByYear) {
-        console.log("Year: " + year + " => " + totalsByYear[year].toFixed(2) + " kms");
+        console.log("Year: " + year + " => " + totalsByYear[year].toFixed(2) + " kms" + ",  " + countByYear[year] + " activities, " + (timeByYear[year] / 3600) + " hours");
         totalDistance += totalsByYear[year];
+        totalCount += countByYear[year];
+        totalTime += timeByYear[year];
+
     }
 
-    console.log("Total distance for gear => " + totalDistance.toFixed(2) + " kms");
+    console.log("Total distance for " + activityType + " for gear " + gearName + " => " + totalDistance.toFixed(2) + " kms");
     return totalsByYear;
 };
 
@@ -50,7 +61,7 @@ var printStats = function () {
         var option = options[id];
         if (option.value != "") {
             console.log('Calculating stats for bike ' + option.text);
-            calculate(option.value, "Ride");
+            calculate(option.value, option.text, "Ride");
         }
     });
 
@@ -59,9 +70,21 @@ var printStats = function () {
         var option = options[id];
         if (option.value != "") {
             console.log('Calculating stats for shoes ' + option.text);
-            calculate(option.value, "Run");
+            calculate(option.value, option.text, "Run");
         }
     });
+
+    options.each(function (id) {
+        var option = options[id];
+        if (option.value != "") {
+            console.log('Calculating stats for shoes ' + option.text);
+            calculate(option.value, option.text, "Hike");
+        }
+    });
+
+    calculate("", "", "Ride");
+    calculate("", "", "Run");
+    calculate("", "", "Hike");
 };
 
 printStats();
